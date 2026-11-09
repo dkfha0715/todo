@@ -7,8 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="To Do">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" id="ati" href="">
-<link rel="icon" id="fav" href="">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" id="ati" href="icons/apple-touch-icon.png">
+<link rel="icon" id="fav" href="icons/favicon-64.png">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#ffffff">
 <title>To Do</title>
@@ -21,7 +22,13 @@ input,textarea{-webkit-user-select:text;user-select:text}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:default}
 button:active{opacity:.5}
 svg{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.35;stroke-linecap:round;stroke-linejoin:round}
-.app{position:absolute;inset:0;display:flex;padding-top:env(safe-area-inset-top)}
+.app{position:absolute;inset:0;display:flex;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+/* 홈 화면 설치 안내 (Safari에서만) */
+#inst{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:calc(76px + env(safe-area-inset-bottom));z-index:90;display:flex;align-items:center;gap:10px;padding:10px 10px 10px 16px;border-radius:18px;background:rgba(255,255,255,.97);box-shadow:0 8px 30px rgba(30,50,70,.18);font:14px/1.35 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:#2c3744;-webkit-user-select:none;user-select:none}
+#inst[hidden]{display:none}
+#inst svg{width:18px;height:18px;flex:0 0 auto;stroke:#1f3b57;stroke-width:1.6}
+#inst span{flex:1;min-width:0}
+#inst button{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:#f1f3f5;color:#8e8e93;font-size:18px;line-height:30px;text-align:center}
 /* ---------- sidebar ---------- */
 .sidebar{flex:0 0 var(--sbw);width:var(--sbw);margin:12px 0 12px 10px;background:#fafafa;border-radius:28px;box-shadow:var(--shadow);overflow:hidden;z-index:6;border:1px solid #f0f1f2;transition:flex-basis .34s var(--ease),margin .34s var(--ease),opacity .25s,transform .34s var(--ease)}
 .app.nosb .sidebar{flex-basis:0;margin-left:0;opacity:0;pointer-events:none;border-width:0}
@@ -681,7 +688,7 @@ function openSettings(){
   '<div class="sg"><h4>새 할일 기본값</h4><div class="grp"><div class="sr2"><span>알람 켜기</span>'+sw('alarmOn')+'</div><button class="sr2" data-act="alarmAt"><span>알람 시각</span><em>'+t12(S.set.alarmAt)+'</em>'+IC.chev+'</button></div></div>'+
   '<div class="sg"><h4>캘린더 · 미리알림 · 위젯</h4><div class="grp"><button class="sr2" data-act="ics"><span>캘린더로 보내기 (.ics)</span>'+IC.chev+'</button><button class="sr2" data-act="rem"><span>오늘 할일 복사 (미리알림용)</span>'+IC.chev+'</button><button class="sr2" data-act="wjson"><span>위젯용 오늘 할일 파일</span>'+IC.chev+'</button><button class="sr2" data-act="wscript"><span>위젯 스크립트 복사</span>'+IC.chev+'</button></div><p>웹앱은 아이폰의 캘린더·미리알림에 직접 접근하거나 홈 화면 위젯을 만들 수 없어, 내보내기 방식으로 연결합니다. 자동 양방향 동기화는 지원하지 않습니다.</p></div>'+
   '<div class="sg"><h4>데이터</h4><div class="grp"><button class="sr2" data-act="backup"><span>백업 내려받기</span>'+IC.chev+'</button><button class="sr2" data-act="import"><span>백업 불러오기</span>'+IC.chev+'</button><button class="sr2 red" data-act="clearDone"><span>완료한 할일 삭제</span></button><button class="sr2 red" data-act="reset"><span>모든 데이터 초기화</span></button></div><p>할일은 이 기기의 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라지니 가끔 백업해 주세요.</p></div>'+
-  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.3</em></div></div></div>';
+  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.4</em></div></div></div>';
  };
  const draw0=draw;
  draw();paintSw();
@@ -814,6 +821,26 @@ if(!ICOL[S.set.icon])S.set.icon='white';applyIcon();if(!['board','cal','list'].i
 if(innerWidth<600||innerHeight>innerWidth)S.sb=false;
 fit();renderAll();
 addEventListener('resize',()=>{fit()});
+/* ---------- 앱 설치 · 오프라인 ---------- */
+(()=>{
+ const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+ const ua=navigator.userAgent,isIOS=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const inApp=/KAKAOTALK|Instagram|FBAN|FBAV|Line\/|NAVER\(inapp|DaumApps/i.test(ua);
+ const DK='todo-install-dismissed';
+ let off=false;try{off=Date.now()-(+localStorage.getItem(DK)||0)<7*864e5}catch(e){}
+ if(isIOS&&!standalone&&!off){
+  const b=document.createElement('div');b.id='inst';
+  const share='<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M7 10H5.5A1.5 1.5 0 004 11.5v8A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-8a1.5 1.5 0 00-1.5-1.5H17"/></svg>';
+  b.innerHTML=share+'<span>'+(inApp?'Safari로 열면 앱으로 설치할 수 있어요':'공유 → <b>홈 화면에 추가</b>로 앱처럼 설치하세요')+'</span><button aria-label="닫기">×</button>';
+  b.querySelector('button').onclick=()=>{b.hidden=true;try{localStorage.setItem(DK,Date.now())}catch(e){}};
+  document.body.appendChild(b);
+ }
+ if('serviceWorker' in navigator&&location.protocol==='https:'){
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+  const had=!!navigator.serviceWorker.controller;let done=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!done){done=true;save();location.reload()}});
+ }
+})();
 </script>
 </body>
 </html>
