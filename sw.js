@@ -1,14 +1,18 @@
 // To Do 오프라인 캐시
 // 앱 파일을 바꿔 배포할 때는 VERSION을 올리면 기기에 새 버전이 받아진다.
-const VERSION = "todo-v2";
+const VERSION = "todo-v3";
+const COLORS = ["white", "sky", "black", "gray"];
 const SHELL = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "icons/icon-192.png",
-  "icons/icon-512.png",
-  "icons/apple-touch-icon.png",
   "icons/favicon-64.png",
+  ...COLORS.flatMap((k) => [
+    `manifest-${k}.webmanifest`,
+    `icons/apple-touch-icon-${k}.png`,
+    `icons/icon-192-${k}.png`,
+    `icons/icon-512-${k}.png`,
+  ]),
 ];
 
 self.addEventListener("install", (e) => {

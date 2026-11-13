@@ -1,0 +1,32 @@
+{
+  "name": "To Do",
+  "short_name": "To Do",
+  "description": "보드 · 달력 · 목록으로 보는 할일 앱",
+  "lang": "ko",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "icons/icon-192-black.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-black.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/apple-touch-icon-black.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

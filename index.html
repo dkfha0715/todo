@@ -7,8 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="To Do">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" id="ati" href="icons/apple-touch-icon.png">
+<link rel="manifest" id="mfst" href="manifest-white.webmanifest">
+<link rel="apple-touch-icon" id="ati" sizes="180x180" href="icons/apple-touch-icon-white.png">
 <link rel="icon" id="fav" href="icons/favicon-64.png">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#ffffff">
@@ -534,11 +534,14 @@ function renderChrome(){
 }
 function renderAll(){renderChrome();renderSB();renderView()}
 /* ---------- view events ---------- */
-let lpFlag=0;
+let lpFlag=0,chkTimer=0;
 $('#view').addEventListener('click',e=>{
  if(Date.now()-lpFlag<500)return;
  const c=e.target.closest('[data-chk]');
- if(c){const t=S.tasks.find(x=>x.id===c.dataset.chk);t.done=!t.done;save();renderAll();return}
+ if(c){const t=S.tasks.find(x=>x.id===c.dataset.chk);t.done=!t.done;save();
+  /* 체크 표시는 바로, 아래로 내려가는 정렬은 1.5초 뒤에 */
+  const r=c.closest('.row,.cchip');if(r)r.classList.toggle('done',t.done);
+  clearTimeout(chkTimer);chkTimer=setTimeout(renderAll,1500);return}
  const a=e.target.closest('[data-add]');
  if(a){openModal({date:a.dataset.add||null});return}
  const nav=e.target.closest('[data-calnav]');
@@ -698,9 +701,12 @@ function iconURL(k,n){const c=ICOL[k]||ICOL.white,cv=document.createElement('can
  x.fillStyle=c[2];x.strokeStyle=c[2];x.lineCap='round';x.lineWidth=44*u;
  [320,512,704].forEach((y,i)=>{x.beginPath();x.arc(270*u,y*u,46*u,0,7);x.fill();x.globalAlpha=i==2?.6:1;x.beginPath();x.moveTo(390*u,y*u);x.lineTo((i==2?640:780)*u,y*u);x.stroke();x.globalAlpha=1});
  return cv.toDataURL('image/png')}
-/* 아이콘 링크는 href만 바꾸면 Safari가 예전 것을 쓰므로 매번 지우고 새로 만든다 */
+/* 홈 화면 아이콘: iOS는 data: 주소 아이콘을 쓰지 않고 manifest 아이콘을 먼저 보기도 해서,
+   색마다 미리 만든 PNG 파일과 manifest 파일로 링크를 지우고 새로 만든다 */
 function applyIcon(){try{const k=ICOL[S.set.icon]?S.set.icon:'white';
- [['ati','apple-touch-icon',180],['fav','icon',64]].forEach(([id,rel,n])=>{const o=document.getElementById(id);if(o)o.remove();const l=document.createElement('link');l.id=id;l.rel=rel;l.type='image/png';if(rel==='apple-touch-icon')l.sizes='180x180';l.href=iconURL(k,n);document.head.appendChild(l)})}catch(e){}}
+ [['ati','apple-touch-icon','icons/apple-touch-icon-'+k+'.png'],['fav','icon',iconURL(k,64)],['mfst','manifest','manifest-'+k+'.webmanifest']].forEach(([id,rel,href])=>{
+  document.querySelectorAll('#'+id+',link[rel="'+rel+'"]').forEach(o=>o.remove());
+  const l=document.createElement('link');l.id=id;l.rel=rel;if(rel!=='manifest')l.type='image/png';if(rel==='apple-touch-icon')l.sizes='180x180';l.href=href;document.head.appendChild(l)})}catch(e){}}
 function paintSw(){document.querySelectorAll('[data-icv]').forEach(cv=>{const im=new Image();im.onload=()=>cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);im.src=iconURL(cv.dataset.icv,116)})}
 /* ---------- settings (iOS) ---------- */
 function backup(){try{const b=new Blob([JSON.stringify({tasks:S.tasks,lists:S.lists,set:S.set},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='할일백업.json';document.body.appendChild(a);a.click();a.remove()}catch(e){toast('내려받기 실패')}}
@@ -718,7 +724,7 @@ function openSettings(){
   '<div class="sg"><h4>새 할일 기본값</h4><div class="grp"><div class="sr2"><span>알람 켜기</span>'+sw('alarmOn')+'</div><button class="sr2" data-act="alarmAt"><span>알람 시각</span><em>'+t12(S.set.alarmAt)+'</em>'+IC.chev+'</button></div></div>'+
   '<div class="sg"><h4>캘린더 · 미리알림 · 위젯</h4><div class="grp"><button class="sr2" data-act="ics"><span>캘린더로 보내기 (.ics)</span>'+IC.chev+'</button><button class="sr2" data-act="rem"><span>오늘 할일 복사 (미리알림용)</span>'+IC.chev+'</button><button class="sr2" data-act="wjson"><span>위젯용 오늘 할일 파일</span>'+IC.chev+'</button><button class="sr2" data-act="wscript"><span>위젯 스크립트 복사</span>'+IC.chev+'</button></div><p>웹앱은 아이폰의 캘린더·미리알림에 직접 접근하거나 홈 화면 위젯을 만들 수 없어, 내보내기 방식으로 연결합니다. 자동 양방향 동기화는 지원하지 않습니다.</p></div>'+
   '<div class="sg"><h4>데이터</h4><div class="grp"><button class="sr2" data-act="backup"><span>백업 내려받기</span>'+IC.chev+'</button><button class="sr2" data-act="import"><span>백업 불러오기</span>'+IC.chev+'</button><button class="sr2 red" data-act="clearDone"><span>완료한 할일 삭제</span></button><button class="sr2 red" data-act="reset"><span>모든 데이터 초기화</span></button></div><p>할일은 이 기기의 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라지니 가끔 백업해 주세요.</p></div>'+
-  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.5</em></div></div></div>';
+  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.6</em></div></div></div>';
  };
  const draw0=draw;
  draw();paintSw();
@@ -784,7 +790,7 @@ function openModal(init,editId){sfx('open');
   const base=dt||today();
   setQ('p1',(()=>{const n=addDays(base,1);return dow(n)+', '+rel(n)})());
   setQ('m1',(()=>{const n=addDays(base,-1);return dow(n)+', '+rel(n)})());
-  setQ('alarm',d.alarm&&dt?t12(d.alarmAt):'꺼짐',d.alarm&&dt);
+  setQ('alarm',d.alarm&&dt?t12(d.alarmAt):'꺼짐',false);
   const pb=q('#q_pri');pb.firstElementChild.textContent=d.priority?'!'.repeat(d.priority):'!';pb.classList.toggle('act',d.priority>0);
   q('#q_clr').classList.toggle('act',!dt);
   q('#dDate span').textContent=dt?dow(dt)+', '+dfmt(dt)+(d.time?' '+t12(d.time):''):NODATE;
