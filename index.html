@@ -7,12 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="To Do">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<script>
-/* 홈 화면 아이콘 색: Safari는 페이지를 처음 읽을 때의 manifest·아이콘 링크로 홈 화면 앱을 만든다.
-   그래서 저장된 색을 읽어 처음부터 그 색의 링크를 넣는다. 저장된 색이 없으면(처음 실행) 하얀색. */
-(function(){var k='white';try{var j=JSON.parse(localStorage.getItem('todo-board-v3'));if(j&&j.set&&/^(white|sky|black|gray)$/.test(j.set.icon))k=j.set.icon}catch(e){}
-document.write('<link rel="manifest" id="mfst" href="manifest-'+k+'.webmanifest"><link rel="apple-touch-icon" id="ati" sizes="180x180" href="icons/apple-touch-icon-'+k+'.png"><link rel="icon" id="fav" type="image/png" href="icons/apple-touch-icon-'+k+'.png">');window.ICON_AT_LOAD=k})();
-</script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#ffffff">
 <title>To Do</title>
@@ -237,7 +234,7 @@ svg{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-widt
 .sg{margin:24px 0 0}
 .sg h4{margin:0 16px 7px;font-size:13px;font-weight:400;color:#6d6d72;text-transform:uppercase}
 .sg .grp{background:#fff;border-radius:10px;overflow:hidden}
-.icsw{display:flex;gap:18px;padding:14px 16px;justify-content:center}.icsw button{width:58px;height:58px;border-radius:14px;box-shadow:0 0 0 1px rgba(0,0,0,.14);position:relative}.icsw button.on{box-shadow:0 0 0 3px #fff,0 0 0 5px #007aff}.icsw span{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:9px;font-size:11px;color:#6d6d72;white-space:nowrap}.icsw{padding-bottom:30px}
+
 .sg p{margin:7px 16px 0;font-size:12.5px;color:#6d6d72;line-height:1.4}
 .sr2{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 16px;font-size:17px;color:#000;width:100%;text-align:left;position:relative}
 .sr2:active{background:#d9d9de;opacity:1}
@@ -360,7 +357,7 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const NODATE='예정완료일 없음';
 const KEY='todo-board-v3';
 let S={tasks:[],lists:[{id:'todo',name:'To do'}],sel:'all',sb:true,edit:false,closed:{},
- set:{showDone:true,showMemo:false,alarmOn:true,alarmAt:'09:00',icon:'white',mode:'board',hide:{}},mode:'board',daySel:null,calInit:false};
+ set:{showDone:true,showMemo:false,alarmOn:true,alarmAt:'09:00',mode:'board',hide:{}},mode:'board',daySel:null,calInit:false};
 let Z=1,W=1180,H=820,MOB=false;
 const LISTS=()=>S.lists.filter(l=>!l.type);
 /* ---------- fit to iPad ---------- */
@@ -697,23 +694,6 @@ if(!items.length){w.addText("할일 없음").font=Font.systemFont(12)}
 items.slice(0,6).forEach(i=>{const t=w.addText("○ "+("!".repeat(i.priority)+" ")+i.title);t.font=Font.systemFont(12);t.lineLimit=1});
 if(config.runsInWidget)Script.setWidget(w);else w.presentMedium();Script.complete();`;
 
-/* ---------- app icon ---------- */
-const ICOL={white:['#ffffff','#e9ebef','#2b2f36','하얀색'],sky:['#8fd3ff','#3ea6f0','#ffffff','하늘색'],black:['#2a2a2c','#000000','#ffffff','검정색'],gray:['#a7acb3','#6b7078','#ffffff','회색']};
-function iconURL(k,n){const c=ICOL[k]||ICOL.white,cv=document.createElement('canvas');cv.width=cv.height=n;const x=cv.getContext('2d'),u=n/1024;
- const g=x.createLinearGradient(0,0,0,n);g.addColorStop(0,c[0]);g.addColorStop(1,c[1]);x.fillStyle=g;x.fillRect(0,0,n,n);
- x.fillStyle=c[2];x.strokeStyle=c[2];x.lineCap='round';x.lineWidth=44*u;
- [320,512,704].forEach((y,i)=>{x.beginPath();x.arc(270*u,y*u,46*u,0,7);x.fill();x.globalAlpha=i==2?.6:1;x.beginPath();x.moveTo(390*u,y*u);x.lineTo((i==2?640:780)*u,y*u);x.stroke();x.globalAlpha=1});
- return cv.toDataURL('image/png')}
-/* 홈 화면 아이콘 링크는 <head>의 스크립트가 페이지를 읽을 때 넣는다.
-   색을 바꾸면 저장하고 페이지를 새로 불러서, Safari가 새 색의 링크를 처음부터 읽게 한다 */
-function applyIcon(){}
-function changeIcon(k){
- if(!ICOL[k]||k===window.ICON_AT_LOAD){S.set.icon=k;save();return false}
- S.set.icon=k;save();
- /* 홈 화면 앱은 Safari와 저장 공간이 따로라, 여기서 고른 색은 Safari에 전달되지 않는다 */
- if(matchMedia('(display-mode: standalone)').matches||navigator.standalone===true){dlg({title:'아이콘 색은 Safari에서 바꿔요',msg:'홈 화면 앱과 Safari는 저장 공간이 따로입니다. Safari에서 주소를 열어 설정에서 '+ICOL[k][3]+'을 고른 뒤, 공유 → 홈 화면에 추가를 누르세요.',ok:'확인'},()=>{});return false}
- toast(ICOL[k][3]+' 아이콘으로 바꾸는 중…');setTimeout(()=>location.reload(),700);return true}
-function paintSw(){document.querySelectorAll('[data-icv]').forEach(cv=>{const im=new Image();im.onload=()=>cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);im.src=iconURL(cv.dataset.icv,116)})}
 /* ---------- settings (iOS) ---------- */
 function backup(){try{const b=new Blob([JSON.stringify({tasks:S.tasks,lists:S.lists,set:S.set},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='할일백업.json';document.body.appendChild(a);a.click();a.remove()}catch(e){toast('내려받기 실패')}}
 function openSettings(){
@@ -722,24 +702,21 @@ function openSettings(){
  stage.appendChild(ov);
  const sw=(k)=>'<button class="sw '+(S.set[k]?'on':'')+'" data-sw="'+k+'" aria-label="'+k+'"><i></i></button>';
  const draw=()=>{
-  setTimeout(paintSw,0);
   $('#sBody').innerHTML=
   '<div class="sg"><h4>표시</h4><div class="grp"><div class="sr2"><span>완료한 할일 보기</span>'+sw('showDone')+'</div><div class="sr2"><span>메모 보기</span>'+sw('showMemo')+'</div></div></div>'+
-  '<div class="sg"><h4>앱 아이콘 색</h4><div class="grp"><div class="icsw">'+Object.keys(ICOL).map(k=>'<button data-ic="'+k+'" class="'+(S.set.icon===k?'on':'')+'" style="background:linear-gradient(#'+'fff,#fff)" aria-label="'+ICOL[k][3]+'"><canvas width="58" height="58" data-icv="'+k+'" style="border-radius:14px;display:block"></canvas><span>'+ICOL[k][3]+'</span></button>').join('')+'</div></div><p>Safari에서 색을 고르면 화면이 한 번 새로 열립니다. 그다음 공유 → 홈 화면에 추가를 누르세요. 이미 추가한 앱의 아이콘은 바뀌지 않으니, 홈 화면의 앱을 지우고 다시 추가하세요. 처음 색은 하얀색입니다.</p></div>'+
   '<div class="sg"><h4>시작 화면</h4><div class="grp"><div class="seg">'+[['board','보드'],['cal','달력'],['list','목록']].map(([k,l])=>'<button data-mode="'+k+'" class="'+(S.set.mode===k?'on':'')+'">'+l+'</button>').join('')+'</div></div></div>'+
   '<div class="sg"><h4>새 할일 기본값</h4><div class="grp"><div class="sr2"><span>알람 켜기</span>'+sw('alarmOn')+'</div><button class="sr2" data-act="alarmAt"><span>알람 시각</span><em>'+t12(S.set.alarmAt)+'</em>'+IC.chev+'</button></div></div>'+
   '<div class="sg"><h4>캘린더 · 미리알림 · 위젯</h4><div class="grp"><button class="sr2" data-act="ics"><span>캘린더로 보내기 (.ics)</span>'+IC.chev+'</button><button class="sr2" data-act="rem"><span>오늘 할일 복사 (미리알림용)</span>'+IC.chev+'</button><button class="sr2" data-act="wjson"><span>위젯용 오늘 할일 파일</span>'+IC.chev+'</button><button class="sr2" data-act="wscript"><span>위젯 스크립트 복사</span>'+IC.chev+'</button></div><p>웹앱은 아이폰의 캘린더·미리알림에 직접 접근하거나 홈 화면 위젯을 만들 수 없어, 내보내기 방식으로 연결합니다. 자동 양방향 동기화는 지원하지 않습니다.</p></div>'+
   '<div class="sg"><h4>데이터</h4><div class="grp"><button class="sr2" data-act="backup"><span>백업 내려받기</span>'+IC.chev+'</button><button class="sr2" data-act="import"><span>백업 불러오기</span>'+IC.chev+'</button><button class="sr2 red" data-act="clearDone"><span>완료한 할일 삭제</span></button><button class="sr2 red" data-act="reset"><span>모든 데이터 초기화</span></button></div><p>할일은 이 기기의 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라지니 가끔 백업해 주세요.</p></div>'+
-  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.7</em></div></div></div>';
+  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.8</em></div></div></div>';
  };
  const draw0=draw;
- draw();paintSw();
+ draw();
  const close=()=>{ov.remove();save();renderAll()};
  $('#sDone').onclick=close;
  ov.addEventListener('mousedown',e=>{if(e.target===ov)close()});
  ov.addEventListener('click',e=>{
   const s=e.target.closest('[data-sw]');if(s){S.set[s.dataset.sw]=!S.set[s.dataset.sw];save();draw();return}
-  const ic=e.target.closest('[data-ic]');if(ic){changeIcon(ic.dataset.ic);draw();return}
   const m=e.target.closest('[data-mode]');if(m){S.set.mode=m.dataset.mode;S.mode=m.dataset.mode;save();draw();return}
   const a=e.target.closest('[data-act]');if(!a)return;
   const k=a.dataset.act;
@@ -860,7 +837,7 @@ setInterval(()=>{const n=new Date(),hm=pad(n.getHours())+':'+pad(n.getMinutes())
  S.tasks.forEach(t=>{if(t.done||!t.alarm||t.date!==today()||t.alarmAt!==hm)return;const k=t.id+t.date+hm;if(fired.has(k))return;fired.add(k);toast('알람: '+t.title)})},15000);
 /* ---------- init ---------- */
 load();
-if(!ICOL[S.set.icon])S.set.icon='white';applyIcon();if(!['board','cal','list'].includes(S.set.mode))S.set.mode='board';S.mode=S.set.mode;
+if(!['board','cal','list'].includes(S.set.mode))S.set.mode='board';S.mode=S.set.mode;
 if(innerWidth<600||innerHeight>innerWidth)S.sb=false;
 fit();renderAll();
 addEventListener('resize',()=>{fit()});
