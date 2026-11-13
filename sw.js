@@ -1,6 +1,6 @@
 // To Do 오프라인 캐시
 // 앱 파일을 바꿔 배포할 때는 VERSION을 올리면 기기에 새 버전이 받아진다.
-const VERSION = "todo-v3";
+const VERSION = "todo-v4";
 const COLORS = ["white", "sky", "black", "gray"];
 const SHELL = [
   "./",
