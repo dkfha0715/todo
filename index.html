@@ -252,6 +252,19 @@ svg{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-widt
 .seg button.on{background:#fff;box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04);font-weight:600}
 .toast{position:absolute;left:50%;top:22px;transform:translateX(-50%);background:rgba(40,40,44,.92);color:#fff;padding:11px 20px;border-radius:22px;font-size:14px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.25);white-space:nowrap;animation:fi .2s}
 .hid{position:fixed;left:0;top:0;opacity:0;pointer-events:none;width:1px;height:1px}
+/* 시각 선택 창 (오전/오후 · 시 · 분) */
+.tp{width:min(320px,92%);background:rgba(248,248,250,.97);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.25);animation:pop .22s var(--ease)}
+.tp h3{margin:0;padding:16px 16px 4px;text-align:center;font-size:17px;font-weight:600;color:#000}
+.tpw{position:relative;display:flex;justify-content:center;gap:4px;height:180px;margin:6px 12px 10px}
+.tpw::before{content:'';position:absolute;left:0;right:0;top:72px;height:36px;border-radius:9px;background:rgba(118,118,128,.12);pointer-events:none}
+.tpw::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(rgba(248,248,250,.95),rgba(248,248,250,0) 38%,rgba(248,248,250,0) 62%,rgba(248,248,250,.95))}
+.tpc{width:72px;height:180px;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:72px 0}
+.tpc::-webkit-scrollbar{display:none}
+.tpc div{height:36px;line-height:36px;text-align:center;font-size:21px;color:#000;scroll-snap-align:center;font-variant-numeric:tabular-nums}
+.tpc.ap div{font-size:18px}
+.tpb{display:flex;border-top:.5px solid rgba(60,60,67,.29)}
+.tpb button{flex:1;height:46px;font-size:17px;color:#007aff}
+.tpb button+button{border-left:.5px solid rgba(60,60,67,.29);font-weight:600}
 .ovl .sidebar{position:absolute;left:0;top:0;bottom:0;width:380px;margin:12px;flex:none;box-shadow:0 10px 40px rgba(0,0,0,.18)}.ovl .sbi{width:100%}.ovl.nosb .sidebar{transform:translateX(-115%)}
 .ovl .modal{height:60%;width:90%}.ovl .qc{flex:1 1 0;height:76px}.ovl .wk{height:130px}
 .mob .sidebar{position:absolute;left:0;top:0;bottom:0;width:86%;max-width:380px;margin:10px;flex:none}
@@ -562,6 +575,21 @@ function openMove(id){
  sheet('날짜 이동',t.title,items);
 }
 const pick=(el,val,cb)=>{el.value=val;el.onchange=()=>{if(el.value)cb(el.value)};try{el.showPicker()}catch(e){el.focus();el.click()}};
+/* 시각 선택 창: 숨은 time 입력이 아이패드에서 열리지 않아 직접 그림. val·결과는 'HH:MM' */
+function timePicker(val,cb,title){
+ let[h,m]=(val||'09:00').split(':').map(Number);if(!(h>=0&&h<24))h=9;if(!(m>=0&&m<60))m=0;
+ const IH=36,cols=[['ap',['오전','오후'],h<12?0:1],['h',Array.from({length:12},(_,i)=>String(i+1)),(h%12||12)-1],['m',Array.from({length:60},(_,i)=>pad(i)),m]];
+ const d=document.createElement('div');d.className='dim';
+ d.innerHTML='<div class="tp"><h3>'+esc(title||'알람 시각')+'</h3><div class="tpw">'+cols.map(([k,a])=>'<div class="tpc '+k+'" data-k="'+k+'">'+a.map(x=>'<div>'+x+'</div>').join('')+'</div>').join('')+'</div><div class="tpb"><button data-c>취소</button><button data-o>완료</button></div></div>';
+ stage.appendChild(d);
+ const col=k=>d.querySelector('[data-k="'+k+'"]');
+ cols.forEach(([k,,i])=>{col(k).scrollTop=i*IH});
+ const idx=k=>{const c=col(k);return Math.max(0,Math.min(c.children.length-1,Math.round(c.scrollTop/IH)))};
+ d.querySelectorAll('.tpc').forEach(c=>c.addEventListener('click',e=>{const i=[...c.children].indexOf(e.target);if(i>=0)c.scrollTo({top:i*IH,behavior:'smooth'})}));
+ d.querySelector('[data-c]').onclick=()=>d.remove();
+ d.querySelector('[data-o]').onclick=()=>{const v=pad((idx('h')+1)%12+(idx('ap')?12:0))+':'+pad(idx('m'));d.remove();cb(v)};
+ d.addEventListener('mousedown',e=>{if(e.target===d)d.remove()});
+}
 /* ---------- chrome events ---------- */
 $('#tool').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;
  S.mode=m;S.set.mode=m;save();renderChrome();renderView()});
@@ -670,7 +698,9 @@ function iconURL(k,n){const c=ICOL[k]||ICOL.white,cv=document.createElement('can
  x.fillStyle=c[2];x.strokeStyle=c[2];x.lineCap='round';x.lineWidth=44*u;
  [320,512,704].forEach((y,i)=>{x.beginPath();x.arc(270*u,y*u,46*u,0,7);x.fill();x.globalAlpha=i==2?.6:1;x.beginPath();x.moveTo(390*u,y*u);x.lineTo((i==2?640:780)*u,y*u);x.stroke();x.globalAlpha=1});
  return cv.toDataURL('image/png')}
-function applyIcon(){try{const k=ICOL[S.set.icon]?S.set.icon:'white';$('#ati').href=iconURL(k,180);$('#fav').href=iconURL(k,64)}catch(e){}}
+/* 아이콘 링크는 href만 바꾸면 Safari가 예전 것을 쓰므로 매번 지우고 새로 만든다 */
+function applyIcon(){try{const k=ICOL[S.set.icon]?S.set.icon:'white';
+ [['ati','apple-touch-icon',180],['fav','icon',64]].forEach(([id,rel,n])=>{const o=document.getElementById(id);if(o)o.remove();const l=document.createElement('link');l.id=id;l.rel=rel;l.type='image/png';if(rel==='apple-touch-icon')l.sizes='180x180';l.href=iconURL(k,n);document.head.appendChild(l)})}catch(e){}}
 function paintSw(){document.querySelectorAll('[data-icv]').forEach(cv=>{const im=new Image();im.onload=()=>cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);im.src=iconURL(cv.dataset.icv,116)})}
 /* ---------- settings (iOS) ---------- */
 function backup(){try{const b=new Blob([JSON.stringify({tasks:S.tasks,lists:S.lists,set:S.set},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='할일백업.json';document.body.appendChild(a);a.click();a.remove()}catch(e){toast('내려받기 실패')}}
@@ -688,7 +718,7 @@ function openSettings(){
   '<div class="sg"><h4>새 할일 기본값</h4><div class="grp"><div class="sr2"><span>알람 켜기</span>'+sw('alarmOn')+'</div><button class="sr2" data-act="alarmAt"><span>알람 시각</span><em>'+t12(S.set.alarmAt)+'</em>'+IC.chev+'</button></div></div>'+
   '<div class="sg"><h4>캘린더 · 미리알림 · 위젯</h4><div class="grp"><button class="sr2" data-act="ics"><span>캘린더로 보내기 (.ics)</span>'+IC.chev+'</button><button class="sr2" data-act="rem"><span>오늘 할일 복사 (미리알림용)</span>'+IC.chev+'</button><button class="sr2" data-act="wjson"><span>위젯용 오늘 할일 파일</span>'+IC.chev+'</button><button class="sr2" data-act="wscript"><span>위젯 스크립트 복사</span>'+IC.chev+'</button></div><p>웹앱은 아이폰의 캘린더·미리알림에 직접 접근하거나 홈 화면 위젯을 만들 수 없어, 내보내기 방식으로 연결합니다. 자동 양방향 동기화는 지원하지 않습니다.</p></div>'+
   '<div class="sg"><h4>데이터</h4><div class="grp"><button class="sr2" data-act="backup"><span>백업 내려받기</span>'+IC.chev+'</button><button class="sr2" data-act="import"><span>백업 불러오기</span>'+IC.chev+'</button><button class="sr2 red" data-act="clearDone"><span>완료한 할일 삭제</span></button><button class="sr2 red" data-act="reset"><span>모든 데이터 초기화</span></button></div><p>할일은 이 기기의 브라우저에 저장됩니다. 브라우저 데이터를 지우면 사라지니 가끔 백업해 주세요.</p></div>'+
-  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.4</em></div></div></div>';
+  '<div class="sg"><div class="grp"><div class="sr2"><span>To Do</span><em>1.5</em></div></div></div>';
  };
  const draw0=draw;
  draw();paintSw();
@@ -701,7 +731,7 @@ function openSettings(){
   const m=e.target.closest('[data-mode]');if(m){S.set.mode=m.dataset.mode;S.mode=m.dataset.mode;save();draw();return}
   const a=e.target.closest('[data-act]');if(!a)return;
   const k=a.dataset.act;
-  if(k==='alarmAt')pick($('#pTime'),S.set.alarmAt,v=>{S.set.alarmAt=v;save();draw()});
+  if(k==='alarmAt')timePicker(S.set.alarmAt,v=>{S.set.alarmAt=v;save();draw()});
   if(k==='ics')exportICS();
   if(k==='rem')copyToday();
   if(k==='wjson')todayFile();
@@ -754,7 +784,7 @@ function openModal(init,editId){sfx('open');
   const base=dt||today();
   setQ('p1',(()=>{const n=addDays(base,1);return dow(n)+', '+rel(n)})());
   setQ('m1',(()=>{const n=addDays(base,-1);return dow(n)+', '+rel(n)})());
-  setQ('alarm',d.alarm&&dt?'켜짐':'꺼짐',d.alarm&&dt);
+  setQ('alarm',d.alarm&&dt?t12(d.alarmAt):'꺼짐',d.alarm&&dt);
   const pb=q('#q_pri');pb.firstElementChild.textContent=d.priority?'!'.repeat(d.priority):'!';pb.classList.toggle('act',d.priority>0);
   q('#q_clr').classList.toggle('act',!dt);
   q('#dDate span').textContent=dt?dow(dt)+', '+dfmt(dt)+(d.time?' '+t12(d.time):''):NODATE;
@@ -772,7 +802,7 @@ function openModal(init,editId){sfx('open');
  }
  const needDate=()=>{if(!d.date){toast('날짜를 먼저 정해 주세요');return false}return true};
  const pickDate=()=>pick($('#pDate'),d.date||today(),v=>{d.date=v;sync()});
- const pickAlarm=()=>{if(!needDate())return;d.alarm=true;pick($('#pTime'),d.alarmAt,v=>{d.alarmAt=v;sync()})};
+ const pickAlarm=()=>{if(!needDate())return;d.alarm=true;sync();timePicker(d.alarmAt,v=>{d.alarmAt=v;sync()})};
  const askTag=()=>ask('태그 (띄어쓰기로 구분)',(d.tags||[]).join(' '),v=>{d.tags=v.split(/\s+/).map(x=>x.replace(/^#/,'')).filter(Boolean);sync()});
  const pickList=()=>sheet('리스트 선택','',LISTS().map(l=>({label:l.name,check:l.id===d.list,fn:()=>{d.list=l.id;sync()}})));
  const act={
@@ -781,9 +811,10 @@ function openModal(init,editId){sfx('open');
   today:()=>{d.date=today()},
   pri:()=>{d.priority=(d.priority+1)%4},
   clr:()=>{d.date=null},
-  alarm:()=>{if(needDate())d.alarm=!d.alarm}
+  alarm:()=>{}
  };
  Object.keys(act).forEach(k=>{q('#q_'+k).onclick=()=>{act[k]();sync()}});
+ q('#q_alarm').onclick=pickAlarm;
  q('#dDate').onclick=pickDate;q('#iDate').onclick=pickDate;
  q('#dAlarm').onclick=pickAlarm;q('#iAuto').onclick=pickAlarm;
  q('#iAlarm').onclick=()=>{if(needDate()){d.alarm=!d.alarm;sync()}};
